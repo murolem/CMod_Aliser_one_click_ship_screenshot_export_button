@@ -1,0 +1,62 @@
+# An array of dependencies for this mod.
+# 
+#
+# Each dependency is a table that with keys:
+# - [REQUIRED] string "id" isa dependency mod ID, specified in "mod.rules" as "ID".
+#
+# - [REQUIRED] string "ver" is a semver version that the dependency mod version 
+# (specified in "mod.rules" as "Version") must satisfy. 
+#
+# Semver follows "major.minor.patch" format, for instance:
+#    •         1.2.3 → =1.2.3.
+#    •        ~1.2.3 → >=1.2.3 — <1.3.0
+#    •        ^1.2.3 → >=1.2.3 — <2.0.0
+#    •          ^1.2 → >=1.2.0 — <2.0.0
+#    •            ^1 → >=1.0.0 — <2.0.0
+#    # special dash format allowing to specify a version range
+#    • 1.2.3 - 2.7.5 → >=1.2.3 — <=2.7.5
+#
+# - [REQUIRED] string array "stages" contains the game loading stages 
+# at which the dependency will be required.
+#
+# Since CMods can only load before and/or after the native mods, 
+# you must specify at least one loading stage. 
+#
+# Each stage will have a separate loading order. Allowed values:
+#    - "pre" — before the native mods load
+#    - "post" — after the native mods load.
+#
+# - [OPTIONAL] boolean "optional" marks the dependency as optional, 
+# meaning no errors will be thrown when that dependency is missing.
+#
+# Note that, if the dependency is present, it is treated basically as a required dependency, 
+# meaning that it must follow all the rules and constraints, such as satisfying the dependency version.
+# 
+#
+# Rules:
+# - This mod MUST NOT depend on itself or other mods that depend on it. 
+# Doing so will result in a crash.
+#
+#
+# Dependencies affect the mod loading order:
+# - Initially, all CMods are placed alphabetically in the loading order. 
+#
+# - Then, all the dependencies are separated by their stages. 
+# Each stage has its own loading order, not affecting any other stages.
+# Further actions will be performed for each stage separately.
+# 
+# - If a mod has dependencies, it will be placed immediately after its last dependency (by the loading order).
+# If there are other mods already placed there, current mod will be placed after them.
+# 
+#
+# Examples:
+# [[deps]]
+# id = "mod_author.mod_name1"
+# ver = "^1.0.0"
+# stages = ["pre"]
+#
+# [[deps]]
+# id = "mod_author.mod_name2"
+# ver = "^1.0.0"
+# stages = ["post"]
+# optional = true
