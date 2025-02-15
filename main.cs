@@ -137,7 +137,7 @@ namespace CMod_Example {
 
                         logBox = new LogBox(gameRoot);
                         logBox.LogInfo("beep boop");
-                        keyboard.CharTyped += Keyboard_CharTyped;
+                        //keyboard.CharTyped += Keyboard_CharTyped;
 
                         //Create Window
 
@@ -186,9 +186,9 @@ namespace CMod_Example {
             //}
         }
 
-        private static void Keyboard_CharTyped(object? sender, CharTypedEventArgs e) {
-            logBox.LogInfo("char typed: " + e.Char);
-        }
+        //private static void Keyboard_CharTyped(object? sender, CharTypedEventArgs e) {
+        //    logBox.LogInfo("char typed: " + e.Char);
+        //}
 
         enum GameStateTransition {
             TitleScreenEntered,
@@ -202,14 +202,14 @@ namespace CMod_Example {
 
 
 
-    [HarmonyPatch(typeof(Cosmoteer.Ships.Parts.Defenses.ArcShield))]
-    [HarmonyPatch("OnHit")] // if possible use nameof() here
-    class MyPatches {
-        static void Postfix(Cosmoteer.Ships.Parts.Defenses.ArcShield __instance) {
-            FileLog.Log("on shield hit!");
-            __instance.Rules.Radius += (new Random().Next(-10, 10));
-        }
-    }
+    //[HarmonyPatch(typeof(Cosmoteer.Ships.Parts.Defenses.ArcShield))]
+    //[HarmonyPatch("OnHit")] // if possible use nameof() here
+    //class MyPatches {
+    //    static void Postfix(Cosmoteer.Ships.Parts.Defenses.ArcShield __instance) {
+    //        FileLog.Log("on shield hit!");
+    //        __instance.Rules.Radius += (new Random().Next(-10, 10));
+    //    }
+    //}
 
     //A very basic Window class
     public class WeaponsToolbox : WindowBox {

@@ -1,7 +1,6 @@
 ﻿using Cosmoteer.Game;
 using Halfling.Geometry;
 using Halfling.Gui;
-using Halfling.Input;
 using HarmonyLib;
 
 namespace CMod_Example {
@@ -59,7 +58,7 @@ namespace CMod_Example {
 
             // listen for open key
             var keyboard = Halfling.App.Keyboard;
-            keyboard.CharTyped += this.CharTyped;
+            //keyboard.CharTyped += this.CharTyped;
 
             this.LogWarn("warn message");
             this.LogError("error message");
@@ -81,13 +80,13 @@ namespace CMod_Example {
             this.LogInfo("root gui self deactivated");
         }
 
-        private void CharTyped(object? sender, CharTypedEventArgs e) {
-            if(_visbilitySwitchHotkeys.Contains(e.Char)) {
+        //private void CharTyped(object? sender, CharTypedEventArgs e) {
+        //    if(_visbilitySwitchHotkeys.Contains(e.Char)) {
 
-                // show or hide the log box
-                this.logBoxContainer.SelfActive = !this.logBoxContainer.SelfActive;
-            }
-        }
+        //        // show or hide the log box
+        //        this.logBoxContainer.SelfActive = !this.logBoxContainer.SelfActive;
+        //    }
+        //}
 
         public void LogInfo(string message) {
             this.AppendMessage("info: " + message);
