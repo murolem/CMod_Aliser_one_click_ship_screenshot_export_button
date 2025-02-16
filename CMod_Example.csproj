@@ -25,11 +25,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Krafs.Publicizer" Version="2.2.1">
+    <PackageReference Include="Krafs.Publicizer" Version="2.3.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Lib.Harmony" Version="2.2.2" />
+    <PackageReference Include="Lib.Harmony" Version="2.3.5" />
   </ItemGroup>
 
   <ItemGroup>
@@ -40,13 +40,30 @@
   <ItemGroup>
     <Reference Include="Cosmoteer">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Cosmoteer\Bin\Cosmoteer.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="HalflingCore">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Cosmoteer\Bin\HalflingCore.dll</HintPath>
+      <Private>False</Private>
     </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
   
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="call &quot;$(SolutionDir)Copy_mod_to_game_and_restart.bat&quot;" />
+    <Exec Command="powershell -File IntegrateAfterBuild.ps1 $(OutDir)" />
   </Target>
 </Project>

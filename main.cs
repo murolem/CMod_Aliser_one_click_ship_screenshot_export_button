@@ -1,10 +1,18 @@
-﻿using Cosmoteer.Game;
+﻿using Cosmoteer;
+using Cosmoteer.Game;
+using Cosmoteer.Game.Gui;
+using Cosmoteer.Gui;
+using Cosmoteer.Ships;
 using Halfling;
 using Halfling.Application;
-using Halfling.Geometry;
+using Halfling.Graphics;
 using Halfling.Gui;
-using Halfling.Input;
+using Halfling.Gui.Components.Rects;
+using Halfling.Gui.Dialogs;
+using Halfling.IO;
+using Halfling.Logging;
 using HarmonyLib;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 
 [assembly: IgnoresAccessChecksTo("Cosmoteer")]
@@ -12,217 +20,222 @@ using System.Runtime.CompilerServices;
 
 namespace CMod_Example {
     public class Main {
+        public static LogBox? logBox;
         public static Harmony? harmony;
 
         //Game and SimRoot contain all the information about the current game and simulation
         public static Cosmoteer.Game.GameRoot? gameRoot;
         public static Cosmoteer.Simulation.SimRoot? simRoot;
-        public static Keyboard? keyboard;
-        public static WeaponsToolbox? weaponsToolBox;
-        public static LogBox? logBox;
-        public static IAppState? lastFrameState;
-        public static bool firstFrameStateSet = false;
 
-        public static bool loaded;
 
         /// <summary>
-        /// This function is called by the mod loader before the regular mods get loaded.
-        /// It can be used to modify things such as .rules loading logic, so that the regular mods
-        /// can utilize the new or modified functionality.
+        /// This function gets called by the C++ Mod Loader and runs on the same thread as it.
+        /// Only use this for initialization.
         /// </summary>
-        /// <param name="cmods"></param>
-        /// <param name="cmodIndex"></param>
-        public static void BeforeAllRegularModsLoad(string[] cmods, int cmodIndex) {
-
-        }
-
-        /// <summary>
-        /// This function is called by the mod loader after all of the regular mods get loaded.
-        /// Use it to make major one-time patches and modifications, add listeners, etc.
-        /// </summary>
-        /// <param name="regularMods">A list of present regular mods IDs. CMods are not included here.</param>
-        /// <param name="cmods">A list of present CMods.</param>
-        /// <param name="cmodIndex">Index of this mod amongst other present CMods.</param>
-        public static void AfterAllRegularModsLoaded(string[] regularMods, string[] cmods, int cmodIndex) {
-
-            Harmony.DEBUG = true;
-            FileLog.Log("initialize patches called");
-
-            //Get Keyboard Object (Need this for key checking)
-            keyboard = Halfling.App.Keyboard;
-
-            //Subscribe to event which then gets called from the game thread
-            Halfling.App.Director.FrameEnded += Worker;
-        }
-
-        /// <summary>
-        /// This functions is called before the regular part of this mods gets loaded.
-        /// </summary>
-        /// <param name="regularMods">A list of present regular mods IDs. CMods are not included here.</param>
-        /// <param name="cmods">A list of present CMods.</param>
-        /// <param name="cmodIndex">Index of this mod amongst other present CMods.</param>
-        public static void BeforeRegularModLoad(string[] regularMods, string[] cmods, int cmodIndex) {
-            // your code here...
-        }
-
-        public static void AfterRegularModLoad() {
-            // this functions is called after the regular part of this mods gets loaded
-        }
-
-        public static void Update() {
-            // this functaion is called each frame that the application renders.
-            // TODO: are there separate physics and regular frames?
-        }
-
         public static void InitializePatches() {
-            //This function gets called by the C++ Mod Loader and runs on the same thread as it
-            //Only use this for initialization
+            FileLog.Reset();
+            FileLog.Log("InitializePatches called");
 
+            var enabledMods = Settings.EnabledMods;
+            FileLog.Log("enabled mods");
+            FileLog.Log(String.Join("\n", enabledMods));
+
+            var app = Halfling.App.Director;
+
+            harmony = new Harmony("com.company.project.product");
+
+            // enable to have extra loяgs
+            // will create a log file on your systems Desktop called "harmony.log.txt"
             Harmony.DEBUG = true;
-            FileLog.Log("initialize patches called");
 
-            //Get Keyboard Object (Need this for key checking)
-            keyboard = Halfling.App.Keyboard;
+            PatchAll();
+            Initialize();
 
             //Subscribe to event which then gets called from the game thread
-            Halfling.App.Director.FrameEnded += Worker;
+            Halfling.App.Director.FrameEnded += Update;
         }
 
-
-        public static void Worker(object? sender, EventArgs e) {
-            //Will be called each Frame
-            //UpdateGameStateTransitionChecker();
-
-            //Gets current game state
-            IAppState? currentState = App.Director.States.OfType<IAppState>().FirstOrDefault();
-            if(!firstFrameStateSet) {
-                lastFrameState = currentState;
-                firstFrameStateSet = true;
-                FileLog.Log("First app state: " + currentState.ToString());
-            }
-
-            if(currentState != lastFrameState) {
-                FileLog.Log("App state change: " + currentState.ToString());
-                lastFrameState = currentState;
-            }
-
-
-            //App.Director.UpdateStates
-
-            if(currentState != null) {
-                if(currentState.GetType() == typeof(GameRoot)) {
-                    //We are ingame
-                    // called once when loading the save for the first time
-                    // new loading will not trigger this branch exection
-
-                    if(!loaded) {
-                        loaded = true;
-
-                        Harmony.DEBUG = true;
-                        harmony = new Harmony("com.company.project.product");
-                        harmony.PatchAll();
-
-                        FileLog.Log("harmony patch complete");
-
-                        // your code
-
-
-
-
-
-
-
-                        gameRoot = (GameRoot)currentState;
-                        simRoot = gameRoot.Sim;
-
-                        logBox = new LogBox(gameRoot);
-                        logBox.LogInfo("beep boop");
-                        //keyboard.CharTyped += Keyboard_CharTyped;
-
-                        //Create Window
-
-                        WeaponsToolbox weaponsToolBox = new WeaponsToolbox(gameRoot);
-                        weaponsToolBox.SelfActive = false;
-                        weaponsToolBox.Rect = new Rect(10f, 70f, 274f, 500f);
-                        weaponsToolBox.ResizeController.MinSize = new Vector2(274f, 274f);
-
-                        int labelButtonsCreatedCount = 0;
-                        int labelButtonOffset = 20;
-                        void LabelBtn(string text) {
-                            Halfling.Gui.Label label = new();
-                            //labelBtn1.PercentileWidth = 100
-                            label.Text = text;
-                            label.X = 0;
-                            label.Y = labelButtonOffset * labelButtonsCreatedCount;
-                            label.AutoSize.AutoWidthMode = Halfling.Gui.AutoSizeMode.Enable;
-                            weaponsToolBox.AddChild(label);
-
-                            labelButtonsCreatedCount++;
-                        }
-
-                        LabelBtn("hello crew meat");
-                        LabelBtn("bye crew meat");
-
-                        gameRoot.Gui.FloatingWindows.AddChild(weaponsToolBox);
-
-                        Main.weaponsToolBox = weaponsToolBox;
-                        weaponsToolBox.SelfActive = true; //Show Window
-                    }
-                }
-            }
-
-            //if(loaded)
-            //{
-            //    //Check if N Key was pressed
-            //    bool result = keyboard.HotkeyPressed(ViKey.N, true);
-
-            //    if(result)
-            //    {
-            //        //Key was pressed
-
-            //        //Show / Hide Window
-            //        Main.weaponsToolBox.SelfActive = !Main.weaponsToolBox.SelfActive;
-            //    }
-            //}
+        /// <summary>
+        /// Called before Initialize.
+        /// </summary>
+        public static void PatchAll() {
+            FileLog.Log("Running patches");
+            var assembly = Assembly.GetExecutingAssembly();
+            harmony.PatchAll(assembly);
+            //harmony.PatchAll();
         }
 
-        //private static void Keyboard_CharTyped(object? sender, CharTypedEventArgs e) {
-        //    logBox.LogInfo("char typed: " + e.Char);
-        //}
+        /// <summary>
+        /// Called once before first Update.
+        /// </summary>
+        public static void Initialize() {
 
-        enum GameStateTransition {
-            TitleScreenEntered,
-            LevelLoaded,
         }
 
-        void UpdateGameStateTransitionChecker() {
-
+        /// <summary>
+        /// Called each frame.
+        /// </summary>
+        public static void Update(object? sender, EventArgs e) {
         }
     }
 
 
+    [HarmonyPatch(typeof(ShipsCard), MethodType.Constructor)] // Class name
+    [HarmonyPatch("ShipsCard")] // Constructor name
+    [HarmonyPatch(new Type[]
+        {
+        typeof(GameRoot), typeof(GameGui), typeof(IRectProvider)
+        })
+    ] // Constructor argument types
 
-    //[HarmonyPatch(typeof(Cosmoteer.Ships.Parts.Defenses.ArcShield))]
-    //[HarmonyPatch("OnHit")] // if possible use nameof() here
-    //class MyPatches {
-    //    static void Postfix(Cosmoteer.Ships.Parts.Defenses.ArcShield __instance) {
-    //        FileLog.Log("on shield hit!");
-    //        __instance.Rules.Radius += (new Random().Next(-10, 10));
-    //    }
-    //}
+    static class ShipsCardPatch {
+        public static void Postfix(ref ShipsCard __instance, GameRoot game, GameGui gameGui, IRectProvider bounds) {
+            var container = (LayoutBox)__instance.DockedChildren[0];
+            var shipInteriorButton = container.Children.Last();
 
-    //A very basic Window class
-    public class WeaponsToolbox : WindowBox {
-        public WeaponsToolbox(GameRoot game) {
-            //LayoutBox lbox = new LayoutBox();
-            //lbox.Children.
+            AbsolutePath absolutePath = (AbsolutePath)".//assets//button-icon.png";
+            TextureFactory textures = App.Graphics.Textures;
 
-            base.TitleText = "Test Window ";
-            base.BoundsProvider = game.Gui.RootWidget;
-            //base.Children.LayoutAlgorithm = LayoutAlgorithms.CenterLeft;
-            base.Children.BorderPadding = new Borders(10f);
-            base.Children.WidgetPadding = new Vector2(10f, 10f);
+            string filepath = (string)(FilePath)absolutePath;
+            int mipLevels = 2;
+            TextureSampleMode? sampleMode = TextureSampleMode.Point;
+            Texture texture = textures.Load(filepath, mipLevels: mipLevels, sampleMode: sampleMode);
+
+            var takeScreenshotsButton = new ImageButton(texture);
+            takeScreenshotsButton.CopySettingsFrom(WidgetRules.Instance.FlatButton);
+            takeScreenshotsButton.Size = shipInteriorButton.Size;
+            takeScreenshotsButton.ToolTips.Text = "Capture screenshots of exterior, interior and blueprint views, saving them to the screenshots folder.";
+
+            takeScreenshotsButton.Clicked += TakeScreenshotsButton_Clicked;
+
+            container.AddChild((Widget)takeScreenshotsButton);
+
+            //takeScreenshotsButton.Clicked += (EventHandler<EventArgs>)((sender, e) => {
+            //    takeScreenshotsButton.Size = new Vector2(takeScreenshotsButton.Size.X + 1f, takeScreenshotsButton.Size.Y + 1f);
+            //});
+
+
+
+            //takeScreenshotsButton.CopySpriteFrom(sprite);
+            //takeScreenshotsButton.ImageRectController.
+            //takeScreenshotsButton.ImageSprite.DesiredSize = new Vector2(24f, 24f);
+
         }
 
+        private static void TakeScreenshotsButton_Clicked(object? sender, EventArgs e) {
+            Ship? selectedShip = GameRoot.Current?.Sim?.PlayerInput?.GetSingleSelectedShip();
+            if(selectedShip is null) {
+                return;
+            }
+
+            Texture exteriorScreenshot = selectedShip.Renderer.CaptureFullSizeScreenShot(true);
+            Texture interiorScreenshot = selectedShip.Renderer.CaptureFullSizeScreenShot(false);
+            Texture blueprintScreenshot = selectedShip.BlueprintRenderer.CaptureFullSizeScreenShot();
+
+            string shipName = selectedShip.Metadata.PlainShipName;
+
+            SaveShipScreenshot(exteriorScreenshot, shipName, ScreenshotType.Exterior);
+            SaveShipScreenshot(interiorScreenshot, shipName, ScreenshotType.Interior);
+            SaveShipScreenshot(blueprintScreenshot, shipName, ScreenshotType.Blueprint);
+
+            SaveUtils.ShowSavedDialog(
+                Paths.ScreenshotsFolder,
+                new string[] {
+                    FormatShipFilename(shipName, ScreenshotType.Exterior),
+                    FormatShipFilename(shipName, ScreenshotType.Interior),
+                    FormatShipFilename(shipName, ScreenshotType.Blueprint),
+                }
+            );
+        }
+
+        enum ScreenshotType {
+            Exterior,
+            Interior,
+            Blueprint
+        }
+
+        private static void SaveShipScreenshot(Texture screenshot, string shipName, ScreenshotType type) {
+            SaveUtils.SaveAsImage(screenshot, new AbsolutePath(Paths.ScreenshotsFolder, FormatShipFilename(shipName, type)), ImageFileFormat.Png);
+        }
+
+        private static string FormatShipFilename(string shipName, ScreenshotType screenshotType) {
+            string screenshotTypeSuffix;
+            switch(screenshotType) {
+                case ScreenshotType.Exterior:
+                    screenshotTypeSuffix = "";
+                    break;
+                case ScreenshotType.Interior:
+                    screenshotTypeSuffix = "Interior";
+                    break;
+                case ScreenshotType.Blueprint:
+                    screenshotTypeSuffix = "Blueprint";
+                    break;
+                default:
+                    throw new Exception("Unknown ship screenshot type: " + ScreenshotType.Blueprint);
+            }
+
+            return $"Ship{shipName}{screenshotTypeSuffix}.png";
+        }
+
+    }
+
+    class SaveUtils {
+        /// <summary>
+        /// Shows a dialog telling the user where a screenshot was saved and providing an option of opening that folder.
+        /// </summary>
+        public static async void ShowSavedDialog(AbsolutePath forDirpath, string[] savedFilenames) {
+            List<string> messageParts = new();
+            messageParts.Add("Saved to files: <b>");
+            foreach(var filename in savedFilenames) {
+                messageParts.Add(StringTools.EscapeForXml($"• {filename}"));
+            }
+            messageParts.Add("</b>");
+            messageParts.Add("Screenshots directory:");
+            messageParts.Add($"<b>{StringTools.EscapeForXml(forDirpath)}</b>");
+
+            string message = String.Join("\n", messageParts);
+
+            TwoButtonDialog dialog = new TwoButtonDialog(message, option2Text: "Take me there");
+            dialog.MessageLabel.TextRenderer.HAlignment = Halfling.Graphics.Text.HAlignment.Left;
+
+            await App.Director.PushState((IAppState)dialog);
+            TwoButtonDialog.DialogResponse response = dialog.Response;
+            dialog = (TwoButtonDialog)null;
+
+            if(response != TwoButtonDialog.DialogResponse.Option2) {
+                return;
+            }
+
+            try {
+                Util.ShellExecute((string)forDirpath);
+            } catch(Exception ex) {
+                OneButtonDialog.Show(ex.Message);
+            }
+        }
+
+        /// <summary>Saves the frame as an image file.</summary>
+        public static void SaveAsImage(Texture frame, AbsolutePath filepath, ImageFileFormat format) {
+            try {
+                Directory.CreateDirectory((string)filepath.Directory);
+                using(Stream stream = (Stream)File.OpenWrite((string)(FilePath)filepath)) {
+                    SaveImageTo(stream, frame, format);
+                }
+            } catch(Exception ex) {
+                Logger.Log(ex.ToString());
+                OneButtonDialog.Show(StringTools.EscapeForXml(ex.Message));
+            }
+        }
+
+        /// <summary>Saves the frame as an image to the specified stream.</summary>
+        public static void SaveImageTo(Stream stream, Texture frame, ImageFileFormat format) {
+            using(TextureData data = _GetData()) {
+                data.SaveTo(stream, format);
+            }
+
+            TextureData _GetData() {
+                using(App.Graphics.BeginDraw())
+                    return frame.ToData();
+            }
+        }
     }
 }
