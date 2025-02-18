@@ -18,7 +18,7 @@ using System.Runtime.CompilerServices;
 [assembly: IgnoresAccessChecksTo("Cosmoteer")]
 [assembly: IgnoresAccessChecksTo("HalflingCore")]
 
-namespace CMod_Example {
+namespace CMod {
     public class Main {
         public static LogBox? logBox;
         public static Harmony? harmony;
@@ -90,10 +90,12 @@ namespace CMod_Example {
 
     static class ShipsCardPatch {
         public static void Postfix(ref ShipsCard __instance, GameRoot game, GameGui gameGui, IRectProvider bounds) {
+            var modDirPath = Utils.GetPathToDirectoryForThisMod();
+
             var container = (LayoutBox)__instance.DockedChildren[0];
             var shipInteriorButton = container.Children.Last();
 
-            AbsolutePath absolutePath = (AbsolutePath)".//assets//button-icon.png";
+            AbsolutePath absolutePath = (AbsolutePath)Path.Combine(modDirPath, "assets", "button-icon.png");
             TextureFactory textures = App.Graphics.Textures;
 
             string filepath = (string)(FilePath)absolutePath;

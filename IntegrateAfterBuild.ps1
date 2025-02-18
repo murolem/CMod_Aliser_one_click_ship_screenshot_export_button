@@ -1,18 +1,16 @@
 param ([string]$build_output_rel_path)
 
 # =============
-# Define paths
+# Variables
 # =============
+
+$mod_dirname = "one_click_ship_screenshot_export_button";
+
+# path to the Cosmoteer bin directory
+$cosmoteer_exe_path = "C:\Program Files (x86)\Steam\steamapps\common\Cosmoteer\Bin\Cosmoteer.exe"
 
 # user mods directory; no trailing slash
 $cosmoteer_mods_directory_path = "C:\Users\aliser\Saved Games\Cosmoteer\76561198068709671\Mods"
-
-# path to the Cosmoteer executable
-# only needed if $restart_cosmoteer is set to true
-$cosmoteer_exe_path = "C:\Program Files (x86)\Steam\steamapps\common\Cosmoteer\Bin\Cosmoteer.exe"
-
-# mod folder name
-$mod_dirname = "one_click_ship_screenshot_export_button"
 
 # whether to restart (or start) Cosmoteer after the script is done
 $restart_cosmoteer = $true

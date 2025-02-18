@@ -3,7 +3,7 @@ using Halfling.Geometry;
 using Halfling.Gui;
 using HarmonyLib;
 
-namespace CMod_Example {
+namespace CMod {
     /// <summary>
     /// An in-game logging utility, that displays a window with all messages logged.
     /// 
