@@ -13,7 +13,7 @@ $cosmoteer_exe_path = "C:\Program Files (x86)\Steam\steamapps\common\Cosmoteer\B
 $cosmoteer_mods_directory_path = "C:\Users\aliser\Saved Games\Cosmoteer\76561198068709671\Mods"
 
 # whether to restart (or start) Cosmoteer after the script is done
-$restart_cosmoteer = $true
+$restart_cosmoteer = $false
 
 # whether to start Cosmoteer in devmode. 
 # works only if $restart_cosmoteer is enabled.

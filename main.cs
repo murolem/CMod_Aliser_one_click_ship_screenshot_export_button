@@ -24,9 +24,8 @@ namespace CMod {
         public static Harmony? harmony;
 
         //Game and SimRoot contain all the information about the current game and simulation
-        public static Cosmoteer.Game.GameRoot? gameRoot;
-        public static Cosmoteer.Simulation.SimRoot? simRoot;
-
+        //public static Cosmoteer.Game.GameRoot? gameRoot;
+        //public static Cosmoteer.Simulation.SimRoot? simRoot;
 
         /// <summary>
         /// This function gets called by the C++ Mod Loader and runs on the same thread as it.
@@ -36,17 +35,11 @@ namespace CMod {
             FileLog.Reset();
             FileLog.Log("InitializePatches called");
 
-            var enabledMods = Settings.EnabledMods;
-            FileLog.Log("enabled mods");
-            FileLog.Log(String.Join("\n", enabledMods));
-
-            var app = Halfling.App.Director;
-
             harmony = new Harmony("com.company.project.product");
 
             // enable to have extra loяgs
             // will create a log file on your systems Desktop called "harmony.log.txt"
-            Harmony.DEBUG = true;
+            Harmony.DEBUG = false;
 
             PatchAll();
             Initialize();
@@ -62,7 +55,6 @@ namespace CMod {
             FileLog.Log("Running patches");
             var assembly = Assembly.GetExecutingAssembly();
             harmony.PatchAll(assembly);
-            //harmony.PatchAll();
         }
 
         /// <summary>
@@ -111,17 +103,6 @@ namespace CMod {
             takeScreenshotsButton.Clicked += TakeScreenshotsButton_Clicked;
 
             container.AddChild((Widget)takeScreenshotsButton);
-
-            //takeScreenshotsButton.Clicked += (EventHandler<EventArgs>)((sender, e) => {
-            //    takeScreenshotsButton.Size = new Vector2(takeScreenshotsButton.Size.X + 1f, takeScreenshotsButton.Size.Y + 1f);
-            //});
-
-
-
-            //takeScreenshotsButton.CopySpriteFrom(sprite);
-            //takeScreenshotsButton.ImageRectController.
-            //takeScreenshotsButton.ImageSprite.DesiredSize = new Vector2(24f, 24f);
-
         }
 
         private static void TakeScreenshotsButton_Clicked(object? sender, EventArgs e) {
