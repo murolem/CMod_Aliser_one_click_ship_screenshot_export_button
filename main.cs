@@ -1,4 +1,5 @@
-﻿using Cosmoteer;
+﻿using CMod;
+using Cosmoteer;
 using Cosmoteer.Game;
 using Cosmoteer.Game.Gui;
 using Cosmoteer.Gui;
@@ -18,56 +19,58 @@ using System.Runtime.CompilerServices;
 [assembly: IgnoresAccessChecksTo("Cosmoteer")]
 [assembly: IgnoresAccessChecksTo("HalflingCore")]
 
-namespace CMod {
+namespace CModEntrypoint_Aliser_one_click_ship_screenshot_export_button {
     public class Main {
-        public static LogBox? logBox;
         public static Harmony? harmony;
 
-        //Game and SimRoot contain all the information about the current game and simulation
-        //public static Cosmoteer.Game.GameRoot? gameRoot;
-        //public static Cosmoteer.Simulation.SimRoot? simRoot;
-
         /// <summary>
-        /// This function gets called by the C++ Mod Loader and runs on the same thread as it.
-        /// Only use this for initialization.
+        /// Use this method to apply patches BEFORE the game is fully loaded 
+        /// and BEFORE modifications to rules fules (actions, strings) are applied.
+        /// 
+        /// Source code reference: Cosmoteer.Mods.ModInfo.ApplyPreLoadMods()
         /// </summary>
-        public static void InitializePatches() {
-            FileLog.Reset();
-            FileLog.Log("InitializePatches called");
-
-            harmony = new Harmony("com.company.project.product");
-
-            // enable to have extra loяgs
-            // will create a log file on your systems Desktop called "harmony.log.txt"
-            Harmony.DEBUG = false;
-
-            PatchAll();
-            Initialize();
-
-            //Subscribe to event which then gets called from the game thread
-            Halfling.App.Director.FrameEnded += Update;
+        public static void Pre_ApplyPreLoadMods() {
+            FileLogger.LogInfo("Pre_ApplyPreLoadMods() called");
         }
 
         /// <summary>
-        /// Called before Initialize.
+        /// Use this method to apply patches BEFORE the game is fully loaded 
+        /// and AFTER modifications to rules fules (actions, strings) are applied.
+        /// 
+        /// Source code reference: Cosmoteer.Mods.ModInfo.ApplyPreLoadMods()
         /// </summary>
-        public static void PatchAll() {
+        public static void Post_ApplyPreLoadMods() {
+            FileLogger.LogInfo("Post_ApplyPreLoadMods() called");
+        }
+
+        /// <summary>
+        /// Use this method to apply patches AFTER the game is fully loaded 
+        /// and BEFORE modifications are done to the loaded game data (ship libraries being added).
+        /// 
+        /// Source code reference: Cosmoteer.Mods.ModInfo.ApplyPostLoadMods()
+        /// </summary>
+        public static void Pre_ApplyPostLoadMods() {
+            FileLogger.LogInfo("Pre_ApplyPostLoadMods() called");
+        }
+
+        /// <summary>
+        /// Use this method to apply patches AFTER the game is fully loaded 
+        /// and AFTER modifications are done to the loaded game data (ship libraries being added).
+        /// 
+        /// Source code reference: Cosmoteer.Mods.ModInfo.ApplyPostLoadMods()
+        /// </summary>
+        public static void Post_ApplyPostLoadMods() {
+            FileLogger.LogInfo("Post_ApplyPostLoadMods() called");
+
+            harmony = new Harmony("cmod.aliser.one_click_ship_screenshot_export_button");
+
+            // enable if you want ot have harmony logging about your patching.
+            // if enabled, will create a log file on your systems Desktop called "harmony.log.txt".
+            Harmony.DEBUG = false;
+
             FileLog.Log("Running patches");
             var assembly = Assembly.GetExecutingAssembly();
             harmony.PatchAll(assembly);
-        }
-
-        /// <summary>
-        /// Called once before first Update.
-        /// </summary>
-        public static void Initialize() {
-
-        }
-
-        /// <summary>
-        /// Called each frame.
-        /// </summary>
-        public static void Update(object? sender, EventArgs e) {
         }
     }
 
@@ -82,7 +85,15 @@ namespace CMod {
 
     static class ShipsCardPatch {
         public static void Postfix(ref ShipsCard __instance, GameRoot game, GameGui gameGui, IRectProvider bounds) {
-            var modDirPath = Utils.GetPathToDirectoryForThisMod();
+            // Game and SimRoot contain all the information about the current game and simulation
+            //public static Cosmoteer.Game.GameRoot? gameRoot;
+            //public static Cosmoteer.Simulation.SimRoot? simRoot;
+
+
+            //Subscribe to event which then gets called from the game thread
+            //Halfling.App.Director.FrameEnded += Update;
+
+            var modDirPath = Utils.GetPathToModRoot();
 
             var container = (LayoutBox)__instance.DockedChildren[0];
             var shipInteriorButton = container.Children.Last();
