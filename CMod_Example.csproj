@@ -12,6 +12,7 @@
     <RuntimeFrameworkVersion>7.0.3</RuntimeFrameworkVersion>
 	<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 	<AssemblyName>Main</AssemblyName>
+	<Version>1.1.0</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -39,7 +40,6 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Lib.Harmony" Version="2.3.5" />
   </ItemGroup>
 
   <ItemGroup>
@@ -48,6 +48,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="0Harmony">
+      <HintPath>..\..\..\Saved Games\Cosmoteer\76561198068709671\Mods\CMod_Helper\0Harmony.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Cosmoteer">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Cosmoteer\Bin\Cosmoteer.dll</HintPath>
       <Private>False</Private>
