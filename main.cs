@@ -6,6 +6,7 @@ using Cosmoteer.Gui;
 using Cosmoteer.Ships;
 using Halfling;
 using Halfling.Application;
+using Halfling.Collections;
 using Halfling.Graphics;
 using Halfling.Gui;
 using Halfling.Gui.Components.Rects;
@@ -52,6 +53,8 @@ namespace CModEntrypoint_Aliser_one_click_ship_screenshot_export_button {
             FileLog.Log("Running patches");
             var assembly = Assembly.GetExecutingAssembly();
             harmony.PatchAll(assembly);
+
+            ShipsCardPatch.AfterPatch();
         }
     }
 
@@ -65,15 +68,14 @@ namespace CModEntrypoint_Aliser_one_click_ship_screenshot_export_button {
     ] // Constructor argument types
 
     static class ShipsCardPatch {
+        public static string[] builtInShipsPaths = [];
+        public static void AfterPatch() {
+            // scan built in ships
+            builtInShipsPaths = ScanForShipFilesInDirectoryRecursive(ShipLibrary.BuiltIn.Folder)
+                .ToArray();
+        }
+
         public static void Postfix(ref ShipsCard __instance, GameRoot game, GameGui gameGui, IRectProvider bounds) {
-            // Game and SimRoot contain all the information about the current game and simulation
-            //public static Cosmoteer.Game.GameRoot? gameRoot;
-            //public static Cosmoteer.Simulation.SimRoot? simRoot;
-
-
-            //Subscribe to event which then gets called from the game thread
-            //Halfling.App.Director.FrameEnded += Update;
-
             var modDirPath = Utils.GetPathToModRoot();
 
             var container = (LayoutBox)__instance.DockedChildren[0];
@@ -97,21 +99,78 @@ namespace CModEntrypoint_Aliser_one_click_ship_screenshot_export_button {
             container.AddChild((Widget)takeScreenshotsButton);
         }
 
+        /// <summary>
+        /// Scans directory and it's subdirectories searching for ship files.
+        /// 
+        /// Returns a list of paths to all found ship files.
+        /// </summary>
+        /// <param name="rootDirPath"></param>
+        /// <returns></returns>
+        public static IEnumerable<string> ScanForShipFilesInDirectoryRecursive(string rootDirPath) {
+            string[] dirPaths = Directory.GetDirectories(rootDirPath);
+            if(dirPaths.Length > 0) {
+                // more dirs
+                return dirPaths
+                        .SelectMany(ScanForShipFilesInDirectoryRecursive);
+            } else {
+                // ship files
+                return Directory.GetFiles(rootDirPath, "*.ship.png");
+            }
+        }
+
         private static void TakeScreenshotsButton_Clicked(object? sender, EventArgs e) {
+            FileLogger.LogInfo("Screenshot button clicked, processing.");
+
             Ship? selectedShip = GameRoot.Current?.Sim?.PlayerInput?.GetSingleSelectedShip();
-            if(selectedShip is null) {
+            if(selectedShip == null) {
+                FileLogger.LogInfo("Selected ship is null, aborting.");
                 return;
             }
+
+            string shipName = selectedShip.Metadata.PlainShipName;
+
+            FileLogger.LogInfo("Currently selected ship name: " + shipName);
+
+            FileLogger.LogInfo("Searching for the ship in built-ins");
+
+            string? builtInShipPath = TryFindBuiltInShip(shipName);
+            if(builtInShipPath == null) {
+                FileLogger.LogInfo("Ship was not found in built-ins. Using just the ship's name for its filename.");
+            } else {
+                FileLogger.LogInfo("Found the ship in built-ins! Its filename will be modified to include its location in built-ins.");
+
+                // relative to built-ins
+                string relativePath = Path.GetRelativePath(ShipLibrary.BuiltIn.Folder, builtInShipPath);
+
+                FileLogger.LogInfo("Location relative to built-ins: " + relativePath);
+
+                // path to the ship directory, rid of path separators and joined without spaces.
+                string relativeDirFormattedForFilename = String.Join(
+                    "",
+                    relativePath
+                        .Split(Path.DirectorySeparatorChar)
+                        [0..^1]
+                    );
+
+                // modify ship name to have the path
+                shipName = relativeDirFormattedForFilename + shipName;
+
+                FileLogger.LogInfo("Modified filename: " + shipName);
+            }
+
+            FileLogger.LogInfo("Generating screenshots");
 
             Texture exteriorScreenshot = selectedShip.Renderer.CaptureFullSizeScreenShot(true);
             Texture interiorScreenshot = selectedShip.Renderer.CaptureFullSizeScreenShot(false);
             Texture blueprintScreenshot = selectedShip.BlueprintRenderer.CaptureFullSizeScreenShot();
 
-            string shipName = selectedShip.Metadata.PlainShipName;
+            FileLogger.LogInfo("Saving screenshots");
 
             SaveShipScreenshot(exteriorScreenshot, shipName, ScreenshotType.Exterior);
             SaveShipScreenshot(interiorScreenshot, shipName, ScreenshotType.Interior);
             SaveShipScreenshot(blueprintScreenshot, shipName, ScreenshotType.Blueprint);
+
+            FileLogger.LogInfo("Showing post-save dialog");
 
             SaveUtils.ShowSavedDialog(
                 Paths.ScreenshotsFolder,
@@ -121,6 +180,8 @@ namespace CModEntrypoint_Aliser_one_click_ship_screenshot_export_button {
                     FormatShipFilename(shipName, ScreenshotType.Blueprint),
                 }
             );
+
+            FileLogger.Separator();
         }
 
         enum ScreenshotType {
@@ -130,7 +191,15 @@ namespace CModEntrypoint_Aliser_one_click_ship_screenshot_export_button {
         }
 
         private static void SaveShipScreenshot(Texture screenshot, string shipName, ScreenshotType type) {
-            SaveUtils.SaveAsImage(screenshot, new AbsolutePath(Paths.ScreenshotsFolder, FormatShipFilename(shipName, type)), ImageFileFormat.Png);
+            string resultingFilename = FormatShipFilename(shipName, type);
+
+            FileLogger.LogInfo("Resulting filename: " + resultingFilename);
+
+            AbsolutePath resultingPath = new AbsolutePath(Paths.ScreenshotsFolder, resultingFilename);
+
+            FileLogger.LogInfo("Saving to: " + resultingPath);
+
+            SaveUtils.SaveAsImage(screenshot, resultingPath, ImageFileFormat.Png);
         }
 
         private static string FormatShipFilename(string shipName, ScreenshotType screenshotType) {
@@ -150,6 +219,41 @@ namespace CModEntrypoint_Aliser_one_click_ship_screenshot_export_button {
             }
 
             return $"Ship{shipName}{screenshotTypeSuffix}.png";
+        }
+
+        /// <summary>
+        /// Searches for a ship by name in the built-ins ship library.
+        /// If found, return the absolute path to the found ship file.
+        /// </summary>
+        /// <param name="shipLibrary"></param>
+        /// <param name="shipName"></param>
+        /// <returns></returns>
+        static string? TryFindBuiltInShip(string shipName) {
+            if(builtInShipsPaths.Length == 0) {
+                FileLogger.LogError("No scanned built-in ships found. Forgot to run a scan, dear dev?");
+                return null;
+            }
+
+            string? foundShipFilePath = builtInShipsPaths.Find(shipFilePath => {
+                //FileLogger.LogDebug("Checking: " + shipFilePath);
+                string? foundShipName = Ship.GetNameFromFilename(shipFilePath);
+                if(foundShipName == null) {
+                    return false;
+                }
+
+                if(foundShipName == shipName) {
+                    //FileLogger.LogDebug("Match!");
+                    return true;
+                }
+
+                return false;
+            });
+
+            if(foundShipFilePath == null) {
+                return null;
+            }
+
+            return foundShipFilePath;
         }
 
     }
@@ -182,7 +286,7 @@ namespace CModEntrypoint_Aliser_one_click_ship_screenshot_export_button {
             }
 
             try {
-                Util.ShellExecute((string)forDirpath);
+                Halfling.Util.ShellExecute((string)forDirpath);
             } catch(Exception ex) {
                 OneButtonDialog.Show(ex.Message);
             }
