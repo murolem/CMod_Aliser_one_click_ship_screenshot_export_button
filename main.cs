@@ -134,28 +134,16 @@ namespace CModEntrypoint_Aliser_one_click_ship_screenshot_export_button {
             FileLogger.LogInfo("Searching for the ship in built-ins");
 
             string? builtInShipPath = TryFindBuiltInShip(shipName);
+            string? builtInShipRelativePath = null;
             if(builtInShipPath == null) {
                 FileLogger.LogInfo("Ship was not found in built-ins. Using just the ship's name for its filename.");
             } else {
                 FileLogger.LogInfo("Found the ship in built-ins! Its filename will be modified to include its location in built-ins.");
 
                 // relative to built-ins
-                string relativePath = Path.GetRelativePath(ShipLibrary.BuiltIn.Folder, builtInShipPath);
+                builtInShipRelativePath = Path.GetRelativePath(ShipLibrary.BuiltIn.Folder, builtInShipPath);
 
-                FileLogger.LogInfo("Location relative to built-ins: " + relativePath);
-
-                // path to the ship directory, rid of path separators and joined without spaces.
-                string relativeDirFormattedForFilename = String.Join(
-                    "",
-                    relativePath
-                        .Split(Path.DirectorySeparatorChar)
-                        [0..^1]
-                    );
-
-                // modify ship name to have the path
-                shipName = relativeDirFormattedForFilename + shipName;
-
-                FileLogger.LogInfo("Modified filename: " + shipName);
+                FileLogger.LogInfo("Location relative to built-ins: " + builtInShipRelativePath);
             }
 
             FileLogger.LogInfo("Generating screenshots");
@@ -166,18 +154,18 @@ namespace CModEntrypoint_Aliser_one_click_ship_screenshot_export_button {
 
             FileLogger.LogInfo("Saving screenshots");
 
-            SaveShipScreenshot(exteriorScreenshot, shipName, ScreenshotType.Exterior);
-            SaveShipScreenshot(interiorScreenshot, shipName, ScreenshotType.Interior);
-            SaveShipScreenshot(blueprintScreenshot, shipName, ScreenshotType.Blueprint);
+            SaveShipScreenshot(exteriorScreenshot, ScreenshotType.Exterior, shipName, builtInShipRelativePath ?? "");
+            SaveShipScreenshot(interiorScreenshot, ScreenshotType.Interior, shipName, builtInShipRelativePath ?? "");
+            SaveShipScreenshot(blueprintScreenshot, ScreenshotType.Blueprint, shipName, builtInShipRelativePath ?? "");
 
             FileLogger.LogInfo("Showing post-save dialog");
 
             SaveUtils.ShowSavedDialog(
                 Paths.ScreenshotsFolder,
                 new string[] {
-                    FormatShipFilename(shipName, ScreenshotType.Exterior),
-                    FormatShipFilename(shipName, ScreenshotType.Interior),
-                    FormatShipFilename(shipName, ScreenshotType.Blueprint),
+                    ConstructScreenshotFilename(shipName, ScreenshotType.Exterior, builtInShipRelativePath ?? ""),
+                    ConstructScreenshotFilename(shipName, ScreenshotType.Interior, builtInShipRelativePath ?? ""),
+                    ConstructScreenshotFilename(shipName, ScreenshotType.Blueprint, builtInShipRelativePath ?? ""),
                 }
             );
 
@@ -190,8 +178,8 @@ namespace CModEntrypoint_Aliser_one_click_ship_screenshot_export_button {
             Blueprint
         }
 
-        private static void SaveShipScreenshot(Texture screenshot, string shipName, ScreenshotType type) {
-            string resultingFilename = FormatShipFilename(shipName, type);
+        private static void SaveShipScreenshot(Texture screenshot, ScreenshotType type, string shipName, string shipLocation) {
+            string resultingFilename = ConstructScreenshotFilename(shipName, type, shipLocation);
 
             FileLogger.LogInfo("Resulting filename: " + resultingFilename);
 
@@ -202,23 +190,69 @@ namespace CModEntrypoint_Aliser_one_click_ship_screenshot_export_button {
             SaveUtils.SaveAsImage(screenshot, resultingPath, ImageFileFormat.Png);
         }
 
-        private static string FormatShipFilename(string shipName, ScreenshotType screenshotType) {
-            string screenshotTypeSuffix;
+        /// <summary>
+        /// Constructs a filename for a ship screenshot.
+        /// </summary>
+        /// <param name="shipName">Ship name.</param>
+        /// <param name="screenshotType">Screenshot type.</param>
+        /// <param name="shipLocation">Path to the ship file relative to some ship library directory.</param>
+        /// <returns></returns>
+        private static string ConstructScreenshotFilename(string shipName, ScreenshotType screenshotType, string shipLocation) {
+            string shipNameFormatted = FormatShipName(shipName);
+            string screenshotTyepFormatted = FormatScreenshotType(screenshotType);
+            string shipLocationFormatted = FormatShipLocation(shipLocation);
+
+            return $"Ship{shipLocationFormatted}{shipNameFormatted}{screenshotTyepFormatted}.png";
+        }
+
+        /// <summary>
+        /// Formats ship relative location to some ship library directory to use in a screenshot filename.
+        /// </summary>
+        /// <param name="shipLocation">Relative location to some ship library directory.</param>
+        /// <returns></returns>
+        private static string FormatShipLocation(string shipLocation) {
+            // get dir path and remove spaces
+            string formatted = String.Join(
+                "",
+                shipLocation
+                    .Split(Path.DirectorySeparatorChar)
+                    [0..^1]
+                );
+
+
+            // replace some word occurances
+            formatted = formatted.Replace("Stations", "Station");
+
+            return formatted;
+        }
+
+        /// <summary>
+        /// Formats ship name to use in screenshot filename.
+        /// </summary>
+        /// <returns></returns>
+        private static string FormatShipName(string shipName) {
+            // remove all spaces
+            shipName = shipName.Replace(" ", "");
+
+            return shipName;
+        }
+
+        /// <summary>
+        /// Formats screenshot type to use in screenshot filename.
+        /// </summary>
+        /// <param name="shipName"></param>
+        /// <returns></returns>
+        private static string FormatScreenshotType(ScreenshotType screenshotType) {
             switch(screenshotType) {
                 case ScreenshotType.Exterior:
-                    screenshotTypeSuffix = "";
-                    break;
+                    return "";
                 case ScreenshotType.Interior:
-                    screenshotTypeSuffix = "Interior";
-                    break;
+                    return "Interior";
                 case ScreenshotType.Blueprint:
-                    screenshotTypeSuffix = "Blueprint";
-                    break;
+                    return "Blueprint";
                 default:
-                    throw new Exception("Unknown ship screenshot type: " + ScreenshotType.Blueprint);
+                    throw new Exception("Unknown ship screenshot type: " + screenshotType);
             }
-
-            return $"Ship{shipName}{screenshotTypeSuffix}.png";
         }
 
         /// <summary>
