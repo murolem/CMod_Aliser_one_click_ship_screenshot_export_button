@@ -7,7 +7,7 @@ ID = aliser.one_click_ship_screenshot_export_button
 Name = "[CMod] Aliser's One-Click Ship Screenshot Export Button"
 
 // The version of the mod that will be shown in the user interface. This is optional.
-Version = 1.2.2
+Version = 1.2.3
 
 // This is a list of Cosmoteer versions that this mod is known to be compatible with.
 // If this mod is turned on and it isn't known to be compatible with the version of Cosmoteer
@@ -30,10 +30,3 @@ Logo = "logo.png"
 
 // A longer description of what your mod does to the game. This is optional.
 Description = "[Requires CMod Loader] \nAdds a neat little button to the ship card (panel at lower left corner of the screen). When clicked, takes a full set of beautiful screenshots of the selected ship. By beautiful I mean just the regular screenshots of exterior, interior and blueprint views, but all taken in one button press and saved to the screenshots directory. Yams!"
-
-// Mods can define their own per-language string files.
-// The values in a string file (such as en.rules) will add to
-// and override any values in the base string file (such as Data\strings\en.rules).
-// Each language supported should have its own string file named
-// after the two-letter 639-1 language code for that language.
-StringsFolder = "strings"
